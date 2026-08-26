@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -754,13 +755,18 @@ namespace DeepL {
 
     /// <inheritdoc />
     public async Task<GlossaryLanguagePair[]> GetGlossaryLanguagesAsync(CancellationToken cancellationToken = default) {
+      var queryParams = new (string Key, string Value)[] { ("resource", "glossary") };
       using var responseMessage = await _client
-            .ApiGetAsync("v2/glossary-language-pairs", cancellationToken).ConfigureAwait(false);
+            .ApiGetAsync("v3/languages", cancellationToken, queryParams).ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
-      var languages = await JsonUtils.DeserializeAsync<GlossaryLanguageListResult>(responseMessage)
-            .ConfigureAwait(false);
-      return languages.GlossaryLanguagePairs;
+      var languages = await JsonUtils.DeserializeAsync<V3Language[]>(responseMessage).ConfigureAwait(false);
+      var sourceLanguages = languages.Where(language => language.UsableAsSource).Select(language => language.Lang);
+      var targetLanguages = languages.Where(language => language.UsableAsTarget).Select(language => language.Lang);
+      return sourceLanguages
+            .SelectMany(source => targetLanguages, (source, target) => new GlossaryLanguagePair(source, target))
+            .Where(pair => pair.SourceLanguageCode != pair.TargetLanguageCode)
+            .ToArray();
     }
 
     /// <inheritdoc />
@@ -875,13 +881,23 @@ namespace DeepL {
     private async Task<TValue[]> GetLanguagesAsync<TValue>(
           bool target,
           CancellationToken cancellationToken = default) {
-      var queryParams = new (string Key, string Value)[] { ("type", target ? "target" : "source") };
+      var queryParams = new (string Key, string Value)[] { ("resource", "translate_text") };
       using var responseMessage =
-            await _client.ApiGetAsync("v2/languages", cancellationToken, queryParams)
+            await _client.ApiGetAsync("v3/languages", cancellationToken, queryParams)
                   .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
-      return await JsonUtils.DeserializeAsync<TValue[]>(responseMessage).ConfigureAwait(false);
+      var languages = await JsonUtils.DeserializeAsync<V3Language[]>(responseMessage).ConfigureAwait(false);
+      return languages
+            .Where(language => target ? language.UsableAsTarget : language.UsableAsSource)
+            .Select(
+                  language => target
+                        ? (TValue)(object)new TargetLanguage(
+                              language.Lang,
+                              language.Name,
+                              language.Features.ContainsKey("formality"))
+                        : (TValue)(object)new SourceLanguage(language.Lang, language.Name))
+            .ToArray();
     }
 
     /// <summary>
@@ -1201,17 +1217,37 @@ namespace DeepL {
       public GlossaryInfo[] Glossaries { get; }
     }
 
-    /// <summary>Class used for JSON-deserialization of results of supported languages for glossaries.</summary>
-    private readonly struct GlossaryLanguageListResult {
-      /// <summary>Initializes a new instance of <see cref="GlossaryLanguageListResult" />, used for JSON deserialization.</summary>
+    /// <summary>Class used for JSON-deserialization of entries returned by the <c>GET /v3/languages</c> endpoint.</summary>
+    private readonly struct V3Language {
+      /// <summary>Initializes a new instance of <see cref="V3Language" />, used for JSON deserialization.</summary>
       [JsonConstructor]
-      public GlossaryLanguageListResult(GlossaryLanguagePair[] glossaryLanguagePairs) {
-        GlossaryLanguagePairs = glossaryLanguagePairs;
+      public V3Language(
+            string lang,
+            string name,
+            bool usableAsSource,
+            bool usableAsTarget,
+            Dictionary<string, JsonElement> features) {
+        Lang = lang;
+        Name = name;
+        UsableAsSource = usableAsSource;
+        UsableAsTarget = usableAsTarget;
+        Features = features;
       }
 
-      /// <summary>Array of <see cref="GlossaryLanguagePair" /> objects holding supported glossary language pairs.</summary>
-      [JsonPropertyName("supported_languages")]
-      public GlossaryLanguagePair[] GlossaryLanguagePairs { get; }
+      /// <summary>The BCP-47 language code, for example "de" or "en-US".</summary>
+      public string Lang { get; }
+
+      /// <summary>The name of the language in English.</summary>
+      public string Name { get; }
+
+      /// <summary><c>true</c> if the language may be used as a source language for the requested resource.</summary>
+      public bool UsableAsSource { get; }
+
+      /// <summary><c>true</c> if the language may be used as a target language for the requested resource.</summary>
+      public bool UsableAsTarget { get; }
+
+      /// <summary>Map of feature name to feature metadata supported by this language for the requested resource.</summary>
+      public Dictionary<string, JsonElement> Features { get; }
     }
   }
 }
