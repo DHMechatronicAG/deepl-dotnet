@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- `GetSourceLanguagesAsync()`, `GetTargetLanguagesAsync()`, and `GetGlossaryLanguagesAsync()` now
+  call the `GET /v3/languages` endpoint instead of the deprecated `GET /v2/languages` and
+  `GET /v2/glossary-language-pairs` endpoints. No public API changes.
 
 ## [1.22.1] - 2026-08-18
 ### Changed
