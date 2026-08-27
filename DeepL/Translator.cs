@@ -895,7 +895,7 @@ namespace DeepL {
                         ? (TValue)(object)new TargetLanguage(
                               language.Lang,
                               language.Name,
-                              language.Features.ContainsKey("formality"))
+                              language.Features?.ContainsKey("formality") ?? false)
                         : (TValue)(object)new SourceLanguage(language.Lang, language.Name))
             .ToArray();
     }
