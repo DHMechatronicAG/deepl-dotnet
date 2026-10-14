@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `GetSourceLanguagesAsync()`, `GetTargetLanguagesAsync()`, and `GetGlossaryLanguagesAsync()` now
   call the `GET /v3/languages` endpoint instead of the deprecated `GET /v2/languages` and
-  `GET /v2/glossary-language-pairs` endpoints. No public API changes.
+  `GET /v2/glossary-language-pairs` endpoints. No public API changes, but the returned language lists may include
+  additional languages.
 
 ## [1.22.1] - 2026-08-18
 ### Changed
