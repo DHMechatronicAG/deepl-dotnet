@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and features.
 - Added `DeepLClient.GetLanguageResourcesAsync()` to retrieve the DeepL API resources and their features, including
   whether each feature requires source and/or target language support (`GET /v3/languages/resources`).
+- Added `CorrectTextAsync()` method to the `DeepLClient` class for correcting
+  grammar and spelling errors via the `v2/write/correct` endpoint.
 
 ### Changed
 - Target languages `EN` and `PT` are no longer rejected client-side in text translation, document translation and
@@ -39,8 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.22.0] - 2026-08-11
 ### Added
-- Added `CorrectTextAsync()` method to the `DeepLClient` class for correcting
-  grammar and spelling errors via the `v2/write/correct` endpoint.
 - Added support for using multiple glossaries in text and document translation
   via the `GlossaryIds` property (up to 5 glossary IDs) in `TextTranslateOptions`
   and `DocumentTranslateOptions`.

@@ -244,6 +244,15 @@ var result = await client.RephraseTextAsync("A rainbouw has seven colours.", "EN
 Console.WriteLine(result);
 ```
 
+To only fix grammar and spelling errors without otherwise rephrasing the text, use
+`CorrectTextAsync()`. It takes the same text argument (a string or a list of strings) and an
+optional `targetLanguageCode`, but no style or tone options:
+
+```c#
+WriteResult result = await client.CorrectTextAsync("I has a apple.", "EN-US");
+Console.WriteLine(result);
+```
+
 ### Translating documents
 
 To translate documents, call `TranslateDocumentAsync()` with the input and output files as `FileInfo`
