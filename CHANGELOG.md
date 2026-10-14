@@ -39,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.22.0] - 2026-08-11
 ### Added
+- Added `CorrectTextAsync()` method to the `DeepLClient` class for correcting
+  grammar and spelling errors via the `v2/write/correct` endpoint.
 - Added support for using multiple glossaries in text and document translation
   via the `GlossaryIds` property (up to 5 glossary IDs) in `TextTranslateOptions`
   and `DocumentTranslateOptions`.

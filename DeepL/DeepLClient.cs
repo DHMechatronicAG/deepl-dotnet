@@ -51,6 +51,36 @@ namespace DeepL {
           string? targetLanguageCode,
           TextRephraseOptions? options = null,
           CancellationToken cancellationToken = default);
+
+    /// <summary>Correct specified texts, improving them by fixing grammar and spelling errors.</summary>
+    /// <param name="texts">Texts to improve; must not be empty.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Texts without grammatical or spelling errors.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<WriteResult[]> CorrectTextAsync(
+          IEnumerable<string> texts,
+          string? targetLanguageCode,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>Correct specified text, improving it by fixing grammar and spelling errors.</summary>
+    /// <param name="text">Text to improve; must not be empty.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Text without grammatical or spelling errors.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<WriteResult> CorrectTextAsync(
+          string text,
+          string? targetLanguageCode,
+          CancellationToken cancellationToken = default);
   }
 
   /// <summary>
@@ -106,6 +136,41 @@ namespace DeepL {
       var rephrasedTexts =
             await JsonUtils.DeserializeAsync<TextRephraseResult>(responseMessage).ConfigureAwait(false);
       return rephrasedTexts.Improvements;
+    }
+
+    /// <inheritdoc />
+    public async Task<WriteResult> CorrectTextAsync(
+          string text,
+          string? targetLanguageCode,
+          CancellationToken cancellationToken = default) => (await CorrectTextAsync(
+                new[] { text },
+                targetLanguageCode,
+                cancellationToken)
+          .ConfigureAwait(false))[0];
+
+    /// <inheritdoc />
+    public async Task<WriteResult[]> CorrectTextAsync(
+          IEnumerable<string> texts,
+          string? targetLanguageCode,
+          CancellationToken cancellationToken = default) {
+      var bodyParams = new List<(string Key, string Value)>();
+      if (targetLanguageCode != null) {
+        CheckValidLanguages(null, targetLanguageCode);
+        bodyParams.Add(("target_lang", targetLanguageCode));
+      }
+
+      var textParams = texts
+            .Where(text => text.Length > 0 ? true : throw new ArgumentException("text must not be empty"))
+            .Select(text => ("text", text));
+
+      using var responseMessage = await _client
+            .ApiPostAsync("v2/write/correct", cancellationToken, bodyParams.Concat(textParams))
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      var correctedTexts =
+            await JsonUtils.DeserializeAsync<TextRephraseResult>(responseMessage).ConfigureAwait(false);
+      return correctedTexts.Improvements;
     }
 
     /// <inheritdoc />
