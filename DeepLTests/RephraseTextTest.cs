@@ -28,6 +28,14 @@ namespace DeepLTests {
       }
     }
 
+    [Fact]
+    public async Task TestBareEnglishTarget() {
+      var client = CreateTestClient();
+      var inputText = ExampleText("en");
+      var result = await client.RephraseTextAsync(inputText, LanguageCode.English);
+      checkSanityOfImprovements(inputText, result);
+    }
+
     [RealServerOnlyFact]
     public async Task TestBusinessStyle() {
       var client = CreateTestClient();

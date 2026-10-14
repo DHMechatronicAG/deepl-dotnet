@@ -1125,15 +1125,6 @@ namespace DeepL {
       if (targetLanguageCode.Length == 0) {
         throw new ArgumentException($"{nameof(targetLanguageCode)} must not be empty");
       }
-
-      switch (targetLanguageCode) {
-        case "en":
-          throw new ArgumentException(
-                $"{nameof(targetLanguageCode)}=\"en\" is deprecated, please use \"en-GB\" or \"en-US\" instead");
-        case "pt":
-          throw new ArgumentException(
-                $"{nameof(targetLanguageCode)}=\"pt\" is deprecated, please use \"pt-PT\" or \"pt-BR\" instead");
-      }
     }
 
     /// <summary>

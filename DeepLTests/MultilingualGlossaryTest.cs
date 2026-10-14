@@ -639,28 +639,6 @@ namespace DeepLTests {
     }
 
     [Fact]
-    public async Task TestGlossaryTranslateTextInvalid() {
-      var client = CreateTestClient();
-      var glossaryCleanup = new GlossaryCleanupUtility(client, nameof(TestGlossaryTranslateTextInvalid));
-      var glossaryName = glossaryCleanup.GlossaryName;
-      var glossaryDictEnDe = new MultilingualGlossaryDictionaryEntries("en", "de", TestEntries);
-      var glossaryDictDeEn = new MultilingualGlossaryDictionaryEntries("de", "en", TestEntries);
-      try {
-        var glossary = glossaryCleanup.Capture(
-              await client.CreateMultilingualGlossaryAsync(glossaryName, new[] { glossaryDictEnDe, glossaryDictDeEn }));
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-              () => client.TranslateTextAsync(
-                    "test",
-                    "de",
-                    "en",
-                    new TextTranslateOptions { GlossaryId = glossary.GlossaryId }));
-        Assert.Contains("targetLanguageCode=\"en\" is deprecated", exception.Message);
-      } finally {
-        await glossaryCleanup.Cleanup();
-      }
-    }
-
-    [Fact]
     public async Task TestGlossaryTranslateTextWithoutSourceLang() {
       var client = CreateTestClient();
       var glossaryCleanup = new GlossaryCleanupUtility(client, nameof(TestGlossaryTranslateTextWithoutSourceLang));

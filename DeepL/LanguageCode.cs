@@ -72,10 +72,19 @@ namespace DeepL {
     /// <summary>German language code, may be used as source or target language.</summary>
     public const string German = "de";
 
+    /// <summary>Swiss German language code, may only be used as a target language.</summary>
+    public const string GermanSwiss = "de-CH";
+
+    /// <summary>German (Germany) language code, may only be used as a target language.</summary>
+    public const string GermanGermany = "de-DE";
+
     /// <summary>Greek language code, may be used as source or target language.</summary>
     public const string Greek = "el";
 
-    /// <summary>English language code, may only be used as a source language.</summary>
+    /// <summary>
+    ///   English language code, may be used as source or target language. As a target language it translates to
+    ///   American English; use <see cref="EnglishBritish" /> or <see cref="EnglishAmerican" /> to choose explicitly.
+    /// </summary>
     public const string English = "en";
 
     /// <summary>British English language code, may only be used as a target language.</summary>
@@ -93,6 +102,9 @@ namespace DeepL {
     /// <summary>Latin American Spanish language code, may only be used as a target language.</summary>
     public const string SpanishLatinAmerican = "es-419";
 
+    /// <summary>Spanish (Spain) language code, may only be used as a target language.</summary>
+    public const string SpanishEuropean = "es-ES";
+
     /// <summary>Estonian language code, may be used as source or target language.</summary>
     public const string Estonian = "et";
 
@@ -107,6 +119,12 @@ namespace DeepL {
 
     /// <summary>French language code, may be used as source or target language.</summary>
     public const string French = "fr";
+
+    /// <summary>Canadian French language code, may only be used as a target language.</summary>
+    public const string FrenchCanadian = "fr-CA";
+
+    /// <summary>French (France) language code, may only be used as a target language.</summary>
+    public const string FrenchEuropean = "fr-FR";
 
     /// <summary>Irish language code, may be used as source or target language.</summary>
     public const string Irish = "ga";
@@ -258,7 +276,11 @@ namespace DeepL {
     /// <summary>Pashto language code, may be used as source or target language.</summary>
     public const string Pashto = "ps";
 
-    /// <summary>Portuguese language code, may only be used as a source language.</summary>
+    /// <summary>
+    ///   Portuguese language code, may be used as source or target language. As a target language it translates to
+    ///   European Portuguese; use <see cref="PortugueseBrazilian" /> or <see cref="PortugueseEuropean" /> to choose
+    ///   explicitly.
+    /// </summary>
     public const string Portuguese = "pt";
 
     /// <summary>Brazilian Portuguese language code, may only be used as a target language.</summary>

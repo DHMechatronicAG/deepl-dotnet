@@ -65,6 +65,8 @@ The second and third arguments are case-insensitive language codes for the sourc
 for example `"DE"`, `"FR"`.
 The `LanguageCode` static class defines constants for the currently supported languages, for example
 `LanguageCode.German`, `LanguageCode.French`.
+A target language without a regional variant translates to its default variant, for example `"EN"` to `"EN-US"` and
+`"PT"` to `"PT-PT"`; specify the variant, for example `"EN-GB"` or `"PT-BR"`, to choose explicitly.
 To auto-detect the input text language, specify `null` as the source language.
 
 Additional `TextTranslateOptions` can also be provided, see [Text translation options](#text-translation-options) below.

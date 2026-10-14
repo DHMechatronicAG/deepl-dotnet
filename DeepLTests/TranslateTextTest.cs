@@ -82,9 +82,8 @@ namespace DeepLTests {
 
       CheckResult(await translator.TranslateTextAsync(ExampleText("en"), null, targetLanguageDe));
 
-      // Check that EN and PT as target languages throw an exception
-      await Assert.ThrowsAsync<ArgumentException>(() => translator.TranslateTextAsync(ExampleText("de"), null, "EN"));
-      await Assert.ThrowsAsync<ArgumentException>(() => translator.TranslateTextAsync(ExampleText("de"), null, "PT"));
+      Assert.NotEmpty((await translator.TranslateTextAsync(ExampleText("de"), null, "EN")).Text);
+      Assert.NotEmpty((await translator.TranslateTextAsync(ExampleText("de"), null, "PT")).Text);
     }
 
     [Fact]
