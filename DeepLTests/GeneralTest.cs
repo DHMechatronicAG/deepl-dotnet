@@ -5,10 +5,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DeepL;
+using DeepL.Model;
 using Xunit;
 
 namespace DeepLTests {
@@ -256,6 +258,72 @@ namespace DeepLTests {
         Assert.True(glossaryLanguagePair.SourceLanguageCode.Length > 0);
         Assert.True(glossaryLanguagePair.TargetLanguageCode.Length > 0);
       }
+    }
+
+    [Fact]
+    public async Task TestGetLanguagesForResource() {
+      var client = CreateTestClient();
+      var languages = await client.GetLanguagesForResourceAsync(LanguageResource.TranslateText);
+      Assert.NotEmpty(languages);
+
+      var german = Assert.Single(languages, language => language.Code == "de");
+      Assert.Equal("German", german.Name);
+      Assert.False(string.IsNullOrEmpty(german.Status));
+      Assert.True(german.UsableAsSource);
+      Assert.True(german.UsableAsTarget);
+      Assert.True(german.Supports(LanguageFeature.Formality));
+      Assert.False(string.IsNullOrEmpty(german.Features[LanguageFeature.Formality].Status));
+
+      // GetTargetLanguagesAsync() uses the same endpoint, but normalizes the case of language codes
+      var targetLanguages = await client.GetTargetLanguagesAsync();
+      Assert.Equal(
+            targetLanguages.Select(language => language.Code.ToLowerInvariant()).OrderBy(code => code),
+            languages.Where(language => language.UsableAsTarget).Select(language => language.Code.ToLowerInvariant())
+                  .OrderBy(code => code));
+    }
+
+    [Fact]
+    public async Task TestGetLanguagesForResourceWithInclude() {
+      var client = CreateTestClient();
+      var stableLanguages = await client.GetLanguagesForResourceAsync(LanguageResource.TranslateText);
+      var allLanguages = await client.GetLanguagesForResourceAsync(
+            LanguageResource.TranslateText,
+            new[] { LanguageSupport.IncludeBeta, LanguageSupport.IncludeExternal });
+      Assert.True(allLanguages.Length >= stableLanguages.Length);
+      foreach (var language in stableLanguages) {
+        Assert.Contains(allLanguages, other => other.Code == language.Code);
+      }
+    }
+
+    [Fact]
+    public async Task TestGetLanguagesForResourceGlossary() {
+      var client = CreateTestClient();
+      var languages = await client.GetLanguagesForResourceAsync(LanguageResource.Glossary);
+      Assert.Contains(languages, language => language.Code == "de" && language.UsableAsSource);
+    }
+
+    [Fact]
+    public async Task TestGetLanguagesForResourceInvalid() {
+      var client = CreateTestClient();
+      await Assert.ThrowsAsync<ArgumentException>(() => client.GetLanguagesForResourceAsync(""));
+      await Assert.ThrowsAsync<DeepLException>(() => client.GetLanguagesForResourceAsync("invalid_resource"));
+    }
+
+    [Fact]
+    public async Task TestGetLanguageResources() {
+      var client = CreateTestClient();
+      var resources = await client.GetLanguageResourcesAsync();
+      Assert.Contains(resources, resource => resource.Name == LanguageResource.Glossary);
+
+      var translateText = Assert.Single(resources, resource => resource.Name == LanguageResource.TranslateText);
+      Assert.True(translateText.Supports(LanguageFeature.Formality));
+      var formality = translateText.Features[LanguageFeature.Formality];
+      Assert.Equal(LanguageFeature.Formality, formality.Name);
+      Assert.False(formality.NeedsSourceSupport);
+      Assert.True(formality.NeedsTargetSupport);
+      var glossary = translateText.Features[LanguageFeature.Glossary];
+      Assert.True(glossary.NeedsSourceSupport);
+      Assert.True(glossary.NeedsTargetSupport);
     }
 
     [Fact]

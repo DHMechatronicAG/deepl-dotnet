@@ -1188,6 +1188,153 @@ namespace DeepL {
       return await JsonUtils.DeserializeAsync<MultilingualGlossaryInfo>(responseMessage).ConfigureAwait(false);
     }
 
+    /// <summary>
+    ///   Retrieves the languages supported by the given DeepL API resource, including whether each language can be
+    ///   used as source or target and the features it supports for that resource.
+    /// </summary>
+    /// <param name="resource">
+    ///   Resource to retrieve languages for, for example <see cref="LanguageResource.TranslateText" /> or
+    ///   <see cref="LanguageResource.Glossary" />.
+    /// </param>
+    /// <param name="include">
+    ///   Optional values controlling which languages and features are returned, for example
+    ///   <see cref="LanguageSupport.IncludeBeta" /> or <see cref="LanguageSupport.IncludeExternal" />. By default only
+    ///   stable languages and features are returned.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Array of <see cref="LanguageSupport" /> objects, one per supported language.</returns>
+    /// <exception cref="ArgumentException">If <paramref name="resource" /> is empty.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<LanguageSupport[]> GetLanguagesForResourceAsync(
+          string resource,
+          IEnumerable<string>? include = null,
+          CancellationToken cancellationToken = default) {
+      if (string.IsNullOrEmpty(resource)) {
+        throw new ArgumentException($"Parameter {nameof(resource)} must not be empty");
+      }
+
+      var queryParams = new List<(string Key, string Value)> { ("resource", resource) };
+      if (include != null) {
+        queryParams.AddRange(include.Select(value => ("include", value)));
+      }
+
+      using var responseMessage = await _client
+            .ApiGetAsync("v3/languages", cancellationToken, queryParams).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      var languages = await JsonUtils.DeserializeAsync<LanguageSupportResult[]>(responseMessage)
+            .ConfigureAwait(false);
+      return languages.Select(
+                  language => new LanguageSupport(
+                        language.Lang,
+                        language.Name,
+                        language.Status,
+                        language.UsableAsSource,
+                        language.UsableAsTarget,
+                        (language.Features ?? new Dictionary<string, LanguageFeatureResult>()).ToDictionary(
+                              feature => feature.Key,
+                              feature => new LanguageFeature(feature.Value.Status))))
+            .ToArray();
+    }
+
+    /// <summary>
+    ///   Retrieves the resources supported by the DeepL API, along with their features and whether each feature
+    ///   requires support from the source and/or target language.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Array of <see cref="LanguageResource" /> objects, one per supported resource.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<LanguageResource[]> GetLanguageResourcesAsync(CancellationToken cancellationToken = default) {
+      using var responseMessage = await _client
+            .ApiGetAsync("v3/languages/resources", cancellationToken).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      var resources = await JsonUtils.DeserializeAsync<LanguageResourceResult[]>(responseMessage)
+            .ConfigureAwait(false);
+      return resources.Select(
+                  resource => new LanguageResource(
+                        resource.Name,
+                        (resource.Features ?? Array.Empty<ResourceFeatureResult>()).ToDictionary(
+                              feature => feature.Name,
+                              feature => new ResourceFeature(
+                                    feature.Name,
+                                    feature.NeedsSourceSupport ?? false,
+                                    feature.NeedsTargetSupport ?? false))))
+            .ToArray();
+    }
+
+    /// <summary>Class used for JSON-deserialization of entries returned by <c>GET /v3/languages</c>.</summary>
+    private readonly struct LanguageSupportResult {
+      /// <summary>Initializes a new instance of <see cref="LanguageSupportResult" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public LanguageSupportResult(
+            string lang,
+            string name,
+            string status,
+            bool usableAsSource,
+            bool usableAsTarget,
+            Dictionary<string, LanguageFeatureResult>? features) {
+        Lang = lang;
+        Name = name;
+        Status = status;
+        UsableAsSource = usableAsSource;
+        UsableAsTarget = usableAsTarget;
+        Features = features;
+      }
+
+      public string Lang { get; }
+      public string Name { get; }
+      public string Status { get; }
+      public bool UsableAsSource { get; }
+      public bool UsableAsTarget { get; }
+      public Dictionary<string, LanguageFeatureResult>? Features { get; }
+    }
+
+    /// <summary>Class used for JSON-deserialization of per-language feature entries of <c>GET /v3/languages</c>.</summary>
+    private readonly struct LanguageFeatureResult {
+      /// <summary>Initializes a new instance of <see cref="LanguageFeatureResult" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public LanguageFeatureResult(string status) {
+        Status = status;
+      }
+
+      public string Status { get; }
+    }
+
+    /// <summary>Class used for JSON-deserialization of entries returned by <c>GET /v3/languages/resources</c>.</summary>
+    private readonly struct LanguageResourceResult {
+      /// <summary>Initializes a new instance of <see cref="LanguageResourceResult" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public LanguageResourceResult(string name, ResourceFeatureResult[]? features) {
+        Name = name;
+        Features = features;
+      }
+
+      public string Name { get; }
+      public ResourceFeatureResult[]? Features { get; }
+    }
+
+    /// <summary>Class used for JSON-deserialization of resource feature entries of <c>GET /v3/languages/resources</c>.</summary>
+    private readonly struct ResourceFeatureResult {
+      /// <summary>Initializes a new instance of <see cref="ResourceFeatureResult" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public ResourceFeatureResult(string name, bool? needsSourceSupport, bool? needsTargetSupport) {
+        Name = name;
+        NeedsSourceSupport = needsSourceSupport;
+        NeedsTargetSupport = needsTargetSupport;
+      }
+
+      public string Name { get; }
+      public bool? NeedsSourceSupport { get; }
+      public bool? NeedsTargetSupport { get; }
+    }
+
     /// <summary>Class used for JSON-deserialization of text rephrase results.</summary>
     private readonly struct TextRephraseResult {
       /// <summary>Initializes a new instance of <see cref="TextRephraseResult" />, used for JSON deserialization.</summary>

@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added `LanguageCode` constants for target language variants `GermanSwiss` (`de-CH`), `GermanGermany` (`de-DE`),
   `SpanishEuropean` (`es-ES`), `FrenchCanadian` (`fr-CA`) and `FrenchEuropean` (`fr-FR`).
+- Added `DeepLClient.GetLanguagesForResourceAsync()` to retrieve the languages supported by a DeepL API resource
+  (`GET /v3/languages`), with source/target usability, status and per-language features. Pass `include` values
+  `LanguageSupport.IncludeBeta` and `LanguageSupport.IncludeExternal` to also return beta and third-party languages
+  and features.
+- Added `DeepLClient.GetLanguageResourcesAsync()` to retrieve the DeepL API resources and their features, including
+  whether each feature requires source and/or target language support (`GET /v3/languages/resources`).
 
 ### Changed
 - Target languages `EN` and `PT` are no longer rejected client-side in text translation, document translation and

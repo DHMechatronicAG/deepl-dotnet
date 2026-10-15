@@ -941,6 +941,40 @@ Note that glossaries work for all target regional-variants: a glossary for the
 target language English (`"EN"`) supports translations to both American English
 (`"EN-US"`) and British English (`"EN-GB"`).
 
+#### Listing languages and features per resource
+
+`DeepLClient.GetLanguagesForResourceAsync()` returns the languages supported by
+one DeepL API resource (`LanguageResource.TranslateText`,
+`LanguageResource.TranslateDocument`, `LanguageResource.Glossary`,
+`LanguageResource.Write`, …) as `LanguageSupport` objects, each with
+`UsableAsSource`, `UsableAsTarget`, `Status` and a `Features` map. By default
+only stable languages and features are returned; pass
+`LanguageSupport.IncludeBeta` and/or `LanguageSupport.IncludeExternal` to
+include more.
+
+`DeepLClient.GetLanguageResourcesAsync()` lists the resources and their
+features, and whether each feature must be supported by the source language,
+the target language, or both.
+
+```c#
+var languages = await client.GetLanguagesForResourceAsync(
+      LanguageResource.TranslateText,
+      new[] { LanguageSupport.IncludeBeta });
+foreach (var lang in languages) {
+  if (lang.UsableAsTarget && lang.Supports(LanguageFeature.Formality)) {
+    Console.WriteLine($"{lang.Name} ({lang.Code}) supports formality"); // Example: "German (de) supports formality"
+  }
+}
+
+var resources = await client.GetLanguageResourcesAsync();
+foreach (var resource in resources) {
+  foreach (var feature in resource.Features.Values) {
+    Console.WriteLine(
+          $"{resource.Name}/{feature.Name}: source={feature.NeedsSourceSupport} target={feature.NeedsTargetSupport}");
+  }
+}
+```
+
 ### Exceptions
 
 All library functions may raise `DeepLException` or one of its subclasses. If
